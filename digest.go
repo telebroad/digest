@@ -108,7 +108,7 @@ func (digest *Digest) Request(body io.Reader) (req *http.Request, err error) {
 	return
 }
 
-func (digest *Digest) Do(body io.Reader) (resp *http.Response, err error) {
+func (digest *Digest) RequestAndDo(body io.Reader) (resp *http.Response, err error) {
 	req, err := digest.Request(body)
 	if err != nil {
 		return nil, err
