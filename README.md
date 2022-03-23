@@ -1,6 +1,11 @@
 # Digest
 it's a go implementation for digest auth
 
+### Download
+```cmd
+go get github.com/telebroad/digest
+```
+
 ### DEMOS
 #### Basic example
 
