@@ -3,6 +3,7 @@ package digest
 import (
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -12,12 +13,13 @@ import (
 
 type Digest struct {
 	method, host, uri, user, pass string
+	requireTLS                    bool
 	DigestAuth                    string
 }
 
 // Token returns digest token header
-func Token(method, host, uri, user, pass string) (string, error) {
-	d, err := New(method, host, uri, user, pass)
+func Token(method, host, uri, user, pass string, requireTLS bool) (string, error) {
+	d, err := New(method, host, uri, user, pass, requireTLS)
 	if err != nil {
 		return "", err
 	}
@@ -25,19 +27,31 @@ func Token(method, host, uri, user, pass string) (string, error) {
 }
 
 // New creates new digest header
-func New(method, host, uri, user, pass string) (digest *Digest, err error) {
+func New(method, host, uri, user, pass string, requireTLS bool) (digest *Digest, err error) {
 	digest = &Digest{
-		method: method,
-		host:   host,
-		uri:    uri,
-		user:   user,
-		pass:   pass,
+		method:     method,
+		host:       host,
+		uri:        uri,
+		user:       user,
+		pass:       pass,
+		requireTLS: requireTLS,
 	}
 
 	url := host + uri
 	req, err := http.NewRequest(method, url, nil)
 	req.Header.Set("Content-Type", "text/xml")
-	client := &http.Client{}
+
+	tr := http.DefaultTransport
+	if !requireTLS {
+		tr = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
+	client := &http.Client{
+		Transport: tr,
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return
