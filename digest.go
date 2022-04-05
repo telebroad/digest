@@ -127,7 +127,19 @@ func (digest *Digest) RequestAndDo(body io.Reader) (resp *http.Response, err err
 	if err != nil {
 		return nil, err
 	}
-	client := &http.Client{}
+
+	tr := http.DefaultTransport
+
+	if !digest.requireTLS {
+		tr = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
+	client := &http.Client{
+		Transport: tr,
+	}
+
 	resp, err = client.Do(req)
 	if err != nil {
 		err = fmt.Errorf("http do request error: %w", err)
