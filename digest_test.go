@@ -12,7 +12,7 @@ func TestDigest(t *testing.T) {
 		pass   = "my-password"
 	)
 
-	token, err := Token(method, host, uri, user, pass)
+	token, err := Token(method, host, uri, user, pass, false)
 	if err != nil {
 		t.Errorf("token failed: %s", err.Error())
 	}
