@@ -1,6 +1,7 @@
 package digest
 
 import (
+	"context"
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/tls"
@@ -111,9 +112,14 @@ func getCNonce() string {
 	return fmt.Sprintf("%x", b)[:16]
 }
 
-func (digest *Digest) Request(body io.Reader) (req *http.Request, err error) {
+func (digest *Digest) Request(ctx context.Context, body io.Reader) (req *http.Request, err error) {
 	url := digest.host + digest.uri
-	req, err = http.NewRequest(digest.method, url, body)
+
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	req, err = http.NewRequestWithContext(ctx, digest.method, url, body)
 	if err != nil {
 		err = fmt.Errorf("digest request: %w", err)
 		return
@@ -122,10 +128,14 @@ func (digest *Digest) Request(body io.Reader) (req *http.Request, err error) {
 	return
 }
 
-func (digest *Digest) RequestAndDo(body io.Reader) (resp *http.Response, err error) {
-	req, err := digest.Request(body)
+func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader) (resp *http.Response, err error) {
+	req, err := digest.Request(ctx, body)
 	if err != nil {
 		return nil, err
+	}
+
+	if ctx != nil {
+		req = req.WithContext(ctx)
 	}
 
 	tr := http.DefaultTransport
