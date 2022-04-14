@@ -124,11 +124,12 @@ func (digest *Digest) Request(ctx context.Context, body io.Reader) (req *http.Re
 		err = fmt.Errorf("digest request: %w", err)
 		return
 	}
+
 	req.Header.Set("Authorization", digest.DigestAuth)
 	return
 }
 
-func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader) (req *http.Request, resp *http.Response, err error) {
+func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader, gzip bool) (req *http.Request, resp *http.Response, err error) {
 	req, err = digest.Request(ctx, body)
 	if err != nil {
 		return
@@ -137,7 +138,14 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader) (req *ht
 	if ctx != nil {
 		req = req.WithContext(ctx)
 	}
+	req.Header.Set("Content-Type", "application/xml")
+	if gzip {
+		req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	}
+	req.Header.Set("Keep-Alive", "timeout=0, max=0")
+	req.Header.Set("Connection", "Keep-Alive")
 
+	req.Close = true
 	tr := http.DefaultTransport
 
 	if !digest.requireTLS {
