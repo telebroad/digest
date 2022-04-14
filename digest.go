@@ -128,10 +128,10 @@ func (digest *Digest) Request(ctx context.Context, body io.Reader) (req *http.Re
 	return
 }
 
-func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader) (resp *http.Response, err error) {
-	req, err := digest.Request(ctx, body)
+func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader) (req *http.Request, resp *http.Response, err error) {
+	req, err = digest.Request(ctx, body)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	if ctx != nil {
