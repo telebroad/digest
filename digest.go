@@ -13,14 +13,19 @@ import (
 )
 
 type Digest struct {
-	method, host, uri, user, pass string
-	requireTLS                    bool
-	DigestAuth                    string
+	method     string
+	host       string
+	uri        string
+	user       string
+	pass       string
+	requireTLS bool
+	DigestAuth string
+	userAgent  string
 }
 
 // Token returns digest token header
-func Token(method, host, uri, user, pass string, requireTLS bool) (string, error) {
-	d, err := New(method, host, uri, user, pass, requireTLS)
+func Token(method, host, uri, user, pass, userAgent string, requireTLS bool) (string, error) {
+	d, err := New(method, host, uri, user, pass, userAgent, requireTLS)
 	if err != nil {
 		return "", err
 	}
@@ -28,20 +33,22 @@ func Token(method, host, uri, user, pass string, requireTLS bool) (string, error
 }
 
 // New creates new digest header
-func New(method, host, uri, user, pass string, requireTLS bool) (digest *Digest, err error) {
+func New(method, host, uri, user, pass, userAgent string, requireTLS bool) (digest *Digest, err error) {
 	digest = &Digest{
 		method:     method,
 		host:       host,
 		uri:        uri,
 		user:       user,
 		pass:       pass,
+		userAgent:  userAgent,
 		requireTLS: requireTLS,
 	}
 
 	url := host + uri
 	req, err := http.NewRequest(method, url, nil)
-	req.Header.Set("Content-Type", "text/xml")
-
+	req.Header.Set("Content-Type", "application/xml")
+	req.UserAgent()
+	req.Header.Set("User-Agent", digest.userAgent)
 	tr := http.DefaultTransport
 	if !requireTLS {
 		tr = &http.Transport{
@@ -126,6 +133,7 @@ func (digest *Digest) Request(ctx context.Context, body io.Reader) (req *http.Re
 	}
 
 	req.Header.Set("Authorization", digest.DigestAuth)
+	req.Header.Set("User-Agent", digest.userAgent)
 	return
 }
 
