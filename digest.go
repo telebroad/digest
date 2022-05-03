@@ -1,6 +1,7 @@
 package digest
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"crypto/rand"
@@ -69,12 +70,10 @@ func New(method, host, uri, user, pass, userAgent string, requireTLS bool) (dige
 		err = fmt.Errorf("new digest error: recieved status code '%v'", resp.StatusCode)
 		return
 	}
-	digestParts := creatDigestParts(resp)
-	digestParts["uri"] = uri
-	digestParts["method"] = method
-	digestParts["username"] = user
-	digestParts["password"] = pass
-
+	digestParts, err := digest.creatDigestParts(resp)
+	if err != nil {
+		return
+	}
 	digest.DigestAuth = getDigestAuthorization(digestParts)
 	return
 }
@@ -91,20 +90,29 @@ func getDigestAuthorization(digestParts map[string]string) string {
 	return authorization
 }
 
-func creatDigestParts(resp *http.Response) map[string]string {
-	result := map[string]string{}
-	if len(resp.Header["Www-Authenticate"]) > 0 {
-		wantedHeaders := []string{"nonce", "realm", "qop"}
-		responseHeaders := strings.Split(resp.Header["Www-Authenticate"][0], ",")
-		for _, r := range responseHeaders {
-			for _, w := range wantedHeaders {
-				if strings.Contains(r, w) {
-					result[w] = strings.Split(r, `"`)[1]
-				}
+func (digest *Digest) creatDigestParts(resp *http.Response) (map[string]string, error) {
+
+	Auth := resp.Header["Www-Authenticate"]
+
+	if len(Auth) == 0 {
+		return nil, fmt.Errorf("digest authenticate is not available, the Www-Authenticate header is not found")
+	}
+	digestParts := map[string]string{}
+	wantedHeaders := []string{"nonce", "realm", "qop"}
+	responseHeaders := strings.Split(resp.Header["Www-Authenticate"][0], ",")
+	for _, r := range responseHeaders {
+		for _, w := range wantedHeaders {
+			if strings.Contains(r, w) {
+				digestParts[w] = strings.Split(r, `"`)[1]
 			}
 		}
 	}
-	return result
+	digestParts["uri"] = digest.uri
+	digestParts["method"] = digest.method
+	digestParts["username"] = digest.user
+	digestParts["password"] = digest.pass
+
+	return digestParts, nil
 }
 
 func getMD5(text string) string {
@@ -141,8 +149,35 @@ func (digest *Digest) RequestWithContext(ctx context.Context, body io.Reader) (r
 	return
 }
 
+func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buffer) (resp *http.Response, err error) {
+	resp, err = client.Do(req)
+	if err != nil {
+		return
+	}
+	if resp.StatusCode == 401 {
+		var digestParts map[string]string
+		digestParts, err = digest.creatDigestParts(resp)
+		if err != nil {
+			err = fmt.Errorf("refreshing diqest error: %w", err)
+			return
+		}
+		digest.DigestAuth = getDigestAuthorization(digestParts)
+		var newReq *http.Request
+		newReq, err = digest.RequestWithContext(req.Context(), body)
+		if err != nil {
+			return
+		}
+		*req = *newReq
+		resp, err = client.Do(req)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // RequestAndDo is made to trow a request for testing
-func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader, gzip bool) (req *http.Request, resp *http.Response, err error) {
+func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gzip bool) (req *http.Request, resp *http.Response, err error) {
 	req, err = digest.RequestWithContext(ctx, body)
 	if err != nil {
 		return
@@ -169,7 +204,7 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader, gzip boo
 		Transport: tr,
 	}
 
-	resp, err = client.Do(req)
+	resp, err = digest.Do(client, req, body)
 	if err != nil {
 		err = fmt.Errorf("http do request error: %w", err)
 	}

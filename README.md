@@ -38,13 +38,13 @@ func main() {
 
 #### more advance
 
-```go
+````go
 package main
 
 import (
+	"bytes"
 	"github.com/telebroad/digest"
 	"net/http"
-	"strings"
 )
 
 var (
@@ -57,21 +57,22 @@ var (
 )
 
 func main() {
-	dig, err := digest.New(method, host, uri, user, pass, userAgent, false)
+	Digest, err := digest.New(method, host, uri, user, pass, userAgent, false)
 	if err != nil {
 		// handle error
 	}
+	body := bytes.NewBufferString("<body>some example body</body>")
 	// this will return http request and append the header to it 
-	req, err := dig.Request(strings.NewReader("<body>some example body</body>"))
+	req, err := Digest.Request(body)
 	if err != nil {
 		// handle error
 	}
 
 	client := &http.Client{}
 
-	resp, err := client.Do(req)
+	resp, err := Digest.Do(client, req, body)
 	if err != nil {
 		// handle error
 	}
 }
-```
+````
