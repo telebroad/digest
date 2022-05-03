@@ -18,15 +18,16 @@ import (
 )
 
 var (
-	method = "POST"
-	host   = "https://www.example.com"
-	uri    = "/some/route"
-	user   = "my-username"
-	pass   = "my-password"
+	method    = "POST"
+	host      = "https://www.example.com"
+	uri       = "/some/route"
+	user      = "my-username"
+	pass      = "my-password"
+	userAgent = "test-user-agent"
 )
 
-func main (){
-	token, err := digest.Token(method, host, uri, user, pass)
+func main() {
+	token, err := digest.Token(method, host, uri, user, pass, userAgent, false)
 	if err != nil {
 		// handle error
 	}
@@ -41,29 +42,36 @@ func main (){
 package main
 
 import (
-	"fmt"
-	"strings"
 	"github.com/telebroad/digest"
+	"net/http"
+	"strings"
 )
 
 var (
-	method = "POST"
-	host   = "https://www.example.com"
-	uri    = "/some/route"
-	user   = "my-username"
-	pass   = "my-password"
+	method    = "POST"
+	host      = "https://www.example.com"
+	uri       = "/some/route"
+	user      = "my-username"
+	pass      = "my-password"
+	userAgent = "test-user-agent"
 )
 
-func main (){
-	dig, err := digest.New(method, host, uri, user, pass)
+func main() {
+	dig, err := digest.New(method, host, uri, user, pass, userAgent, false)
 	if err != nil {
 		// handle error
 	}
 	// this will return http request and append the header to it 
-	httpClienRequest, err := dig.Request(strings.NewReader("<body>some example body</body>"))
+	req, err := dig.Request(strings.NewReader("<body>some example body</body>"))
 	if err != nil {
 		// handle error
 	}
-	......
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		// handle error
+	}
 }
 ```

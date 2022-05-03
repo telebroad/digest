@@ -119,7 +119,11 @@ func getCNonce() string {
 	return fmt.Sprintf("%x", b)[:16]
 }
 
-func (digest *Digest) Request(ctx context.Context, body io.Reader) (req *http.Request, err error) {
+func (digest *Digest) Request(body io.Reader) (req *http.Request, err error) {
+	return digest.RequestWithContext(context.Background(), body)
+}
+
+func (digest *Digest) RequestWithContext(ctx context.Context, body io.Reader) (req *http.Request, err error) {
 	url := digest.host + digest.uri
 
 	if ctx == nil {
@@ -137,8 +141,9 @@ func (digest *Digest) Request(ctx context.Context, body io.Reader) (req *http.Re
 	return
 }
 
+// RequestAndDo is made to trow a request for testing
 func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader, gzip bool) (req *http.Request, resp *http.Response, err error) {
-	req, err = digest.Request(ctx, body)
+	req, err = digest.RequestWithContext(ctx, body)
 	if err != nil {
 		return
 	}
@@ -157,9 +162,7 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body io.Reader, gzip boo
 	tr := http.DefaultTransport
 
 	if !digest.requireTLS {
-		tr = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
+		tr.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
 	client := &http.Client{
