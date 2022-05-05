@@ -163,7 +163,7 @@ func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buf
 		}
 		digest.DigestAuth = getDigestAuthorization(digestParts)
 		var newReq *http.Request
-		newReq, err = digest.RequestWithContext(req.Context(), body)
+		newReq, err = digest.RequestWithContext(req.Context(), bytes.NewBuffer(body.Bytes()))
 		if err != nil {
 			return
 		}
@@ -178,6 +178,7 @@ func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buf
 
 // RequestAndDo is made to trow a request for testing
 func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gzip bool) (req *http.Request, resp *http.Response, err error) {
+
 	req, err = digest.RequestWithContext(ctx, body)
 	if err != nil {
 		return
