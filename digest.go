@@ -154,6 +154,7 @@ func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buf
 	if err != nil {
 		return
 	}
+
 	if resp.StatusCode == 401 {
 		var digestParts map[string]string
 		digestParts, err = digest.creatDigestParts(resp)
@@ -163,9 +164,16 @@ func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buf
 		}
 		digest.DigestAuth = getDigestAuthorization(digestParts)
 		var newReq *http.Request
-		newReq, err = digest.RequestWithContext(req.Context(), bytes.NewBuffer(body.Bytes()))
+		newReq, err = digest.RequestWithContext(req.Context(), body)
+
 		if err != nil {
 			return
+		}
+		for k := range req.Header {
+			if k == "Authorization" || k == "User-Agent" {
+				continue
+			}
+			newReq.Header.Add(k, req.Header.Get(k))
 		}
 		*req = *newReq
 		resp, err = client.Do(req)
@@ -179,7 +187,7 @@ func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buf
 // RequestAndDo is made to trow a request for testing
 func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gzip bool) (req *http.Request, resp *http.Response, err error) {
 
-	req, err = digest.RequestWithContext(ctx, body)
+	req, err = digest.RequestWithContext(ctx, bytes.NewBuffer(body.Bytes()))
 	if err != nil {
 		return
 	}
