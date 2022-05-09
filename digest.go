@@ -2,6 +2,7 @@ package digest
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/md5"
 	"crypto/rand"
@@ -181,11 +182,12 @@ func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buf
 			return
 		}
 	}
+
 	return
 }
 
 // RequestAndDo is made to trow a request for testing
-func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gzip bool) (req *http.Request, resp *http.Response, err error) {
+func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gZip bool) (req *http.Request, resp *http.Response, err error) {
 
 	req, err = digest.RequestWithContext(ctx, bytes.NewBuffer(body.Bytes()))
 	if err != nil {
@@ -196,7 +198,8 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gzip
 		req = req.WithContext(ctx)
 	}
 	req.Header.Set("Content-Type", "application/xml")
-	if gzip {
+	if gZip {
+
 		req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 	}
 	req.Header.Set("Keep-Alive", "timeout=0, max=0")
@@ -216,6 +219,16 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gzip
 	resp, err = digest.Do(client, req, body)
 	if err != nil {
 		err = fmt.Errorf("http do request error: %w", err)
+	}
+
+	if gZip {
+		var gz *gzip.Reader
+		gz, err = gzip.NewReader(resp.Body)
+		if err != nil {
+			err = fmt.Errorf("gz response error: %w", err)
+			return
+		}
+		resp.Body = io.NopCloser(gz)
 	}
 	return
 }

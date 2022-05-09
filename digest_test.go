@@ -78,20 +78,22 @@ func TestMultipleRequest(t *testing.T) {
 		t.Errorf("token failed: %s", err.Error())
 	}
 	for i := 0; i < 15; i++ {
-		req, resp, err := digest.RequestAndDo(context.Background(), bytes.NewBufferString(requestBody), false)
+		reqBody := bytes.NewBufferString(requestBody)
+		req, resp, err := digest.RequestAndDo(context.Background(), reqBody, true)
 		fmt.Println(time.Now().Format(time.RFC850))
 		t.Logf("url: %s", req.URL.String())
 		t.Logf("user-agent: %s", req.UserAgent())
 		t.Logf("Authorization: %s", req.Header.Get("Authorization"))
+		t.Logf("req-body: %s...", strings.Join(strings.SplitN(requestBody, "\n", -1), ""))
 		respBody, _ := io.ReadAll(resp.Body)
 		t.Logf("status-code: %d", resp.StatusCode)
-		t.Logf("res-body: %s...", strings.SplitN(string(respBody), "\n", -1)[0])
+		t.Logf("res-body: %s...", strings.Join(strings.SplitN(string(respBody), "\n", -1), ""))
 		t.Logf("Proto: %s", resp.Proto)
 		if err != nil {
 			t.Logf("error: %s\n\n", err.Error())
 		} else {
 			t.Logf("error: nil\n\n")
 		}
-
+		<-time.After(time.Second)
 	}
 }
