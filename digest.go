@@ -36,6 +36,9 @@ func Token(method, host, uri, user, pass, userAgent string, requireTLS bool) (st
 
 // New creates new digest header
 func New(method, host, uri, user, pass, userAgent string, requireTLS bool) (digest *Digest, err error) {
+	return NewWithContext(method, host, uri, user, pass, userAgent, requireTLS, context.Background())
+}
+func NewWithContext(method, host, uri, user, pass, userAgent string, requireTLS bool, ctx context.Context) (digest *Digest, err error) {
 	digest = &Digest{
 		method:     method,
 		host:       host,
@@ -47,7 +50,7 @@ func New(method, host, uri, user, pass, userAgent string, requireTLS bool) (dige
 	}
 
 	url := host + uri
-	req, err := http.NewRequest(method, url, nil)
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	req.Header.Set("Content-Type", "application/xml")
 	req.UserAgent()
 	req.Header.Set("User-Agent", digest.userAgent)
