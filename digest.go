@@ -219,6 +219,7 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gZip
 	resp, err = digest.Do(client, req, body)
 	if err != nil {
 		err = fmt.Errorf("http do request error: %w", err)
+		return
 	}
 
 	if gZip {
