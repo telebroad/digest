@@ -2,7 +2,6 @@ package digest
 
 import (
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/md5"
 	"crypto/rand"
@@ -221,12 +220,5 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer) (req
 		return
 	}
 
-	if gZip {
-		resp.Body, err = gzip.NewReader(resp.Body)
-		if err != nil {
-			err = fmt.Errorf("gz response error: %w", err)
-			return
-		}
-	}
 	return
 }
