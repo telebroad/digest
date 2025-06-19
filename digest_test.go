@@ -60,7 +60,7 @@ func TestRequest(t *testing.T) {
 		t.Errorf("token failed: %s", err.Error())
 	}
 
-	_, resp, err := digest.RequestAndDo(context.Background(), bytes.NewBufferString(requestBody), false)
+	_, resp, err := digest.RequestAndDo(context.Background(), bytes.NewBufferString(requestBody))
 	if err != nil {
 		return
 	}
@@ -79,7 +79,7 @@ func TestMultipleRequest(t *testing.T) {
 	}
 	for i := 0; i < 15; i++ {
 		reqBody := bytes.NewBufferString(requestBody)
-		req, resp, err := digest.RequestAndDo(context.Background(), reqBody, true)
+		req, resp, err := digest.RequestAndDo(context.Background(), reqBody)
 		fmt.Println(time.Now().Format(time.RFC850))
 		t.Logf("url: %s", req.URL.String())
 		t.Logf("user-agent: %s", req.UserAgent())

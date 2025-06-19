@@ -190,7 +190,7 @@ func (digest *Digest) Do(client *http.Client, req *http.Request, body *bytes.Buf
 }
 
 // RequestAndDo is made to trow a request for testing
-func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gZip bool) (req *http.Request, resp *http.Response, err error) {
+func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer) (req *http.Request, resp *http.Response, err error) {
 
 	req, err = digest.RequestWithContext(ctx, bytes.NewBuffer(body.Bytes()))
 	if err != nil {
@@ -201,10 +201,6 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gZip
 		req = req.WithContext(ctx)
 	}
 	req.Header.Set("Content-Type", "application/xml")
-	if gZip {
-
-		req.Header.Set("Accept-Encoding", "gzip, deflate, br")
-	}
 	req.Header.Set("Keep-Alive", "timeout=0, max=0")
 	req.Header.Set("Connection", "Keep-Alive")
 
