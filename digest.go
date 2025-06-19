@@ -226,13 +226,11 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer, gZip
 	}
 
 	if gZip {
-		var gz *gzip.Reader
-		gz, err = gzip.NewReader(resp.Body)
+		resp.Body, err = gzip.NewReader(resp.Body)
 		if err != nil {
 			err = fmt.Errorf("gz response error: %w", err)
 			return
 		}
-		resp.Body = io.NopCloser(gz)
 	}
 	return
 }
