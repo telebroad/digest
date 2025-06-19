@@ -200,8 +200,6 @@ func (digest *Digest) RequestAndDo(ctx context.Context, body *bytes.Buffer) (req
 		req = req.WithContext(ctx)
 	}
 	req.Header.Set("Content-Type", "application/xml")
-	req.Header.Set("Keep-Alive", "timeout=0, max=0")
-	req.Header.Set("Connection", "Keep-Alive")
 
 	req.Close = true
 	tr := http.DefaultTransport
